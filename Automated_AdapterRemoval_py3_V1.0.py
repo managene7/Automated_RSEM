@@ -18,17 +18,17 @@ ________________________________________________________________________________
 
 AdapterRemoval is a tool to remove adapter and trim low-quality reads
 This pipeline needs the following prerequisite software installed:
-AdapterRemoval : conda install bioconda::adapterremoval (Anaconda or Miniconda is needed.)
+AdapterRemoval: conda install bioconda::adapterremoval (Anaconda or Miniconda is needed.)
 ________________________________________________________________________________________________
 
-Run example: python Automated_AdapterRemoval_py3_V1.0.py -include .fq -exclude trimmed -paired 1
+Run example: python Automated_AdapterRemoval_py3_V1.0.py -include .fq -exclude filtered -paired 1
 ________________________________________________________________________________________________
 
 Usage;
 
--help       show option list
--include    key words for filtering files to include 
--exclude    key words for filtering files to exdlude (default is "")
+-help       show the option list
+-include    keywords for filtering files to include 
+-exclude    keywords for filtering files to exclude (default is "")
 -paired     1: paired-end, 2: single-end (default is 1)
 -cores      number of cores for AdapterRemoval (default is 32)
 ________________________________________________________________________________________________
