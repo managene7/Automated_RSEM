@@ -11,14 +11,18 @@ import sys
 args = sys.argv[1:]
 
 option_dict={'-cores':"32",'-paired':"1", '-exclude':""}
-for i in range(len(args)):
-    if args[i].startswith("-"):
-        try:
-            option_dict[args[i]]=args[i+1]
-        except:
-            if args[0]=="-help":
-                print ("""
-_____________________________________________________________________________
+
+help="""
+
+________________________________________________________________________________________________
+
+AdapterRemoval is a tool to remove adapter and trim low-quality reads
+This pipeline needs the following prerequisite software installed:
+AdapterRemoval : conda install bioconda::adapterremoval (Anaconda or Miniconda is needed.)
+________________________________________________________________________________________________
+
+Run example: python Automated_AdapterRemoval_py3_V1.0.py -include .fq -exclude trimmed -paired 1
+________________________________________________________________________________________________
 
 Usage;
 
@@ -27,10 +31,22 @@ Usage;
 -exclude    key words for filtering files to exdlude (default is "")
 -paired     1: paired-end, 2: single-end (default is 1)
 -cores      number of cores for AdapterRemoval (default is 32)
-_____________________________________________________________________________
-""")
+________________________________________________________________________________________________
+"""
+if args==[]:
+    print (help)
+    quit()
+
+for i in range(len(args)):
+    if args[i].startswith("-"):
+        try:
+            option_dict[args[i]]=args[i+1]
+        except:
+            if args[0]=="-help":
+                print (help)
 
                 quit()
+
 
 def file_list(infilter, exfilter): #inputs are string
     import os
