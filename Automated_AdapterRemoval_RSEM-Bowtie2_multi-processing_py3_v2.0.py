@@ -14,8 +14,8 @@ option_dict={'-cores':"32",'-paired':"1", '-exclude':"",'-ref':"", '-target':"1"
 help="""
 ________________________________________________________________________________________________
 
-RSEM is a pipeline to calculate counts, TPM, and FPKM from gene or transcripts.
-This pipeline fully automatize the RSEM from build index for mapping to parsing RSEM results.
+RSEM is a pipeline to calculate counts, TPM, and FPKM from genes or transcripts.
+This pipeline fully automatizes the RSEM from the build index for mapping to parsing RSEM results.
 This pipeline needs the following prerequisite software installed:
 
 AdapterRemoval: conda install bioconda::adapterremoval
@@ -28,13 +28,13 @@ Bowtie2 (mapping) : sudo apt-get install -y bowtie2
 Samtools: sudo apt-get install -y samtools
 ________________________________________________________________________________________________
 
-The pipeline consists of build idex, run RSEM, and parse RSEM result
+The pipeline consists of building an index, running RSEM, and parsing the RSEM result
 You can run this pipeline by following methods:
 1) run all steps: use all options
    example: python Automated_RSEM-Bowtie2_multi-processing_py3_v2.0.py -skip_filtering 2 \\
             -build_index 1 -include .fq -exclude .fa -paired 1 -parsing_only 2 -target 1
 
-2) skip AdapterRemoval and run all the rest steps: use all options
+2) skip AdapterRemoval and run all the rest of the steps: use all options
    example: python Automated_RSEM-Bowtie2_multi-processing_py3_v2.0.py -skip_filtering 1 \\
             -build_index 1 -include filtered.fq -exclude .fa -paired 1 -parsing_only 2 -target 1
             
@@ -56,11 +56,11 @@ Usage;
 -build_index    (option)    1: yes, 2: no (default is 2)
 -ref            (required)  index file name (if '-build_index' is 1 this is ignored.)
 -include        (required)  key letters to select RNA-seqs among files (example: '.fastq')
--exclude        (option)    key letters to exclude the rest files (default is "")
+-exclude        (option)    key letters to exclude the rest of files (default is "")
 -paired         (option)    1: paired-end, 2: single-end (default is 1)
 -parsing_only   (option)    1: parsing the RSEM results only, 2: run all steps (default is 2)
 -target         (option)    1: representative genes, 2: isoforms (default is 1)
--out            (option)    tag for output file name (default is RSEM_result)                       
+-out            (option)    tag for the output file name (default is RSEM_result)                       
 -cores          (option)    number of cores for RSEM (default is 32)
 ______________________________________________________________________________________________
 """
@@ -210,9 +210,22 @@ def main():
     if option_dict['-skip_filtering']=="":
         print ("\n\nChoose '-skip_filtering' option and try again. (1: skip filtering, 2: run AdapterRemoval)\n\n" )
         quit()
+    
+    if option_dict['-parsing_only']=="1":
+        if option_dict['-target']=="1":
+            infilter_cont="genes.results"
+            exfilter_cont="isoforms.results"
+            option_dict['-out']=option_dict['-out']+"_genes"
+        elif option_dict['-target']=="2":
+            infilter_cont="isoforms.results"
+            exfilter_cont="genes.results"
+            option_dict['-out']=option_dict['-out']+"_isoforms"
+        else:
+            print (f"\n\nYou entered -target option as {option_dict['-target']}. \nSo, it will be ignored, and isoforms will be parsed.")
 
-    infilter_cont=option_dict["-include"]
-    exfilter_cont=option_dict["-exclude"]
+    else:
+        infilter_cont=option_dict["-include"]
+        exfilter_cont=option_dict["-exclude"]
 
 
 
@@ -426,8 +439,8 @@ def main():
         fpkm_dic[t_id]=[]
         for seq in seq_list:
             #print (t_id)
-            #print (cont_dic[seq][t_id])
-            count_dic[t_id].append(cont_dic[seq][t_id][0])
+            # print (cont_dic[seq][t_id])
+            count_dic[t_id].append(str(int(float(cont_dic[seq][t_id][0]))))
             tpm_dic[t_id].append(cont_dic[seq][t_id][1])
             fpkm_dic[t_id].append(cont_dic[seq][t_id][2])
     count_csv=csv.writer(open(option_dict['-out']+"_Count_all.csv",'w', newline=""))
