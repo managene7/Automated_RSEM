@@ -54,7 +54,7 @@ Usage;
 -help                       show options
 -skip_filtering (required)  1: yes (skip filtering), 2: no (run AdapterRemoval)
 -build_index    (option)    1: yes, 2: no (default is 2)
--ref            (required)  index file name (if '-build_index' is 1 this is ignored.)
+-ref            (required)  ref seq file name (index file name must be same with ref seq name)
 -include        (required)  key letters to select RNA-seqs among files (example: '.fastq')
 -exclude        (option)    key letters to exclude the rest of files (default is "")
 -paired         (option)    1: paired-end, 2: single-end (default is 1)
@@ -128,7 +128,6 @@ def seq_pairing(filtered_files): # input is list
 
 def rsem_pair(thread, tuple_file, ref):
     import os
-    print ("\n\n==============================\nStarted to run RSEM pipeline..\nThis will take a long time.\n==============================\n\n")
     run_RSEM=os.system("rsem-calculate-expression -p %s --paired-end --bowtie2 --estimate-rspd --append-names %s %s %s %s" % (thread, tuple_file[0], tuple_file[1], ref, tuple_file[0]+"--"+tuple_file[1]+"_rsem_output.txt"))    
     if run_RSEM !=0:
         print ("\n\nRunning RSEM raised error!\nCheck input files and tryagain.\n\n")
@@ -136,7 +135,6 @@ def rsem_pair(thread, tuple_file, ref):
 
 def rsem_single(thread, file, ref):
     import os
-    print ("\n\n==============================\nStarted to run RSEM pipeline..\nThis will take a long time.\n==============================\n\n")
     run_RSEM=os.system("rsem-calculate-expression -p %s --bowtie2 --estimate-rspd --append-names %s %s %s" % (thread, file, ref, file+"_rsem_output.txt"))
     if run_RSEM !=0:
         print ("\n\nRunning RSEM raised error!\nCheck input files and tryagain.\n\n")
@@ -180,7 +178,7 @@ def build_index(ref_genome, type, gene_info, gene_info_type):
 def fasta_reformat(fasta):
     print ("Converting CDS sequence..\n\n")
     infile=open(fasta,'r')
-    out_file=open(fasta+"_converted.txt",'w')
+    out_file=open(fasta,'w')
     init=0
     while 1:
         line=infile.readline().strip()
@@ -233,18 +231,13 @@ def main():
     if option_dict['-parsing_only'] !="1":
         #___ build index file for bowtie2_____________________________
         if option_dict['-build_index']=="1":
-            while 1:
-                target_seq=input("Enter the fasta file name for mapping: ")
-                if target_seq !="":
-                    break
-                else:
-                    print ("\n\nThe name is missing.. Try it again.\n\n")
+            target_seq=option_dict['-ref']
+            
             while 1:
                 seq_type=input("Fasta file contents | 1: genome sequences, 2: gene sequences | : ")
                 if seq_type in ["1","2"]:
                     if seq_type =="2":
                         reformat=fasta_reformat(target_seq)
-                        target_seq=target_seq+"_converted.txt"
 
                         gene_map_name=target_seq+"_transcript_to_gene_map.txt"
                         transcript_to_gene_map=os.system(f"extract-transcript-to-gene-map-from-trinity {target_seq} {gene_map_name}")
@@ -271,7 +264,6 @@ def main():
                 gene_info_type=""
             build_index(target_seq, seq_type, gene_info, gene_info_type)
             
-            option_dict['-ref']=target_seq
         #__________________________________________________________________
             
 
@@ -310,40 +302,38 @@ def main():
 
 
         #___ RSEM mapping _________________________
+
         filtered=file_list(infilter_cont,exfilter_cont)
+
         import multiprocessing
         if option_dict['-paired']=="1":
             paired=seq_pairing(filtered)
             len_paired=len(paired)
+            num_cores=int(option_dict['-cores'])
 
+            num_iter=int(len_paired/num_cores)+1
+            posi=0
+            multiprocessing.freeze_support()
+            for i in range(num_iter):
+                sub_list=paired[posi:posi+num_cores]
+                posi+=num_cores
+                len_sublist=len(sub_list)
 
-            #___allocate threads per process when number of seqs are less than threads___
-            thread=int(int(option_dict['-cores'])/len_paired)
-            if thread <1:
-                thread=1
-            #__________________________________________
+                #___allocate threads per process when number of seqs are less than threads___
+                thread=int(num_cores/len_sublist)
+                if thread <1:
+                    thread=1
+                #__________________________________________
 
-            n=0
-            iter=int(len_paired/int(option_dict['-cores']))+1
-            for i in range(iter):
-                l=i
-                r=i+1
-                left=l*int(option_dict['-cores'])
-                right=r*int(option_dict['-cores'])
+                sub_args=[]
+                for id in sub_list:
+                    sub_args.append((thread, id, option_dict['-ref']))
 
-                procs=[]
-                
-                
-
-                for tuple_file in paired[left:right]:
-                    print (tuple_file)
-                    n=n+1
-                    p=multiprocessing.Process(target=rsem_pair, args=(thread, tuple_file, option_dict['-ref'], ))
-                    p.start()
-                    procs.append(p)
-                for p in procs:
-                    p.join()
-
+                print ("\n\nThis subsets are in processing..\n\n",sub_list,"\n\n")
+                pool=multiprocessing.Pool(processes=num_cores)
+                pool.starmap(rsem_pair, sub_args)
+                pool.close()
+                pool.join()
 
         elif option_dict['-paired']=="2":
             len_filtered=len(filtered)
@@ -353,22 +343,33 @@ def main():
                 thread=1
             #__________________________________________
 
-            iter=int(len_filtered/int(option_dict['-cores']))+1
-            n=0
-            for i in range(iter):
-                l=i
-                r=i+1
-                left=l*int(option_dict['-cores'])
-                right=r*int(option_dict['-cores'])
-                procs=[]
+            num_cores=int(option_dict['-cores'])
 
-            for file in filtered[left:right]:
-                n=n+1
-                p=multiprocessing.Process(target=rsem_single, args=(thread, file, option_dict['-ref'], ))
-                p.start()
-                procs.append(p)
-            for p in procs:
-                p.join()
+            num_iter=int(len_filtered/num_cores)+1
+            posi=0
+
+            multiprocessing.freeze_support()
+            for i in range(num_iter):
+                sub_list=filtered[posi:posi+num_cores]
+                posi+=num_cores
+                len_sublist=len(sub_list)
+
+                #___allocate threads per process when number of seqs are less than threads___
+                thread=int(num_cores/len_sublist)
+                if thread <1:
+                    thread=1
+                #__________________________________________
+
+                sub_args=[]
+                for id in sub_list:
+                    sub_args.append((thread, id, option_dict['-ref']))
+
+                print ("\n\nThis subsets are in processing..\n\n",sub_list,"\n\n")
+                pool=multiprocessing.Pool(processes=num_cores)
+                pool.starmap(rsem_single, sub_args)
+                pool.close()
+                pool.join()
+
         print ("RSEM running has completed. \n\nParsing of the RSEM results starts.")
     
     
