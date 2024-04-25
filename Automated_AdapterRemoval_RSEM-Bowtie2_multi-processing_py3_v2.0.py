@@ -93,11 +93,7 @@ def seq_pairing(filtered_files): # input is list
     n=0
     paired_list=[]
     infile=filtered_files
-    #infile.sort()
-    #print (infile)
-    infile_len=len(infile)
     for k in range(int(len(infile)/2)):
-        #print (n)
         f1=infile[n]
         f2=infile[n+1]
         n=n+2
@@ -105,7 +101,6 @@ def seq_pairing(filtered_files): # input is list
         f1_list=list(f1)
         f2_list=list(f2)
         if len(f1_list)==len(f2_list):
-            #diff=0
             for k in range(len(f1_list)):
                 if f1_list[k]!=f2_list[k]:
                     if f1_list[k] in ["1","2"] and f2_list[k] in ["1","2"]:
@@ -164,16 +159,6 @@ def build_index(ref_genome, type, gene_info, gene_info_type):
 
     print ("\n\nBuilding index file has completed!")
 
-# def transcript_to_gene_map(fasta):
-#     infile_read=open(fasta,'r')
-#     out_file=open(fasta+"_transcript_to_gene_map.txt",'w')
-#     while 1:
-#         line=infile_read.readline()
-#         if line=="":
-#             break
-#         line=line.strip().split()[0]
-#         if ">" in line:
-#             out_file.write(line[1:]+"\t"+line[1:]+"\n")
 
 def fasta_reformat(fasta):
     print ("Converting CDS sequence..\n\n")
@@ -209,27 +194,10 @@ def main():
     if option_dict['-skip_filtering']=="":
         print ("\n\nChoose '-skip_filtering' option and try again. (1: skip filtering, 2: run AdapterRemoval)\n\n" )
         quit()
-    
-    if option_dict['-parsing_only']=="1":
-        if option_dict['-target']=="1":
-            infilter_cont="genes.results"
-            exfilter_cont="isoforms.results"
-            option_dict['-out']=option_dict['-out']+"_genes"
-        elif option_dict['-target']=="2":
-            infilter_cont="isoforms.results"
-            exfilter_cont="genes.results"
-            option_dict['-out']=option_dict['-out']+"_isoforms"
-        else:
-            print (f"\n\nYou entered -target option as {option_dict['-target']}. \nSo, it will be ignored, and isoforms will be parsed.")
-
-    else:
-        infilter_cont=option_dict["-include"]
-        exfilter_cont=option_dict["-exclude"]
-
-
 
 
     if option_dict['-parsing_only'] !="1":
+
         #___ build index file for bowtie2_____________________________
         if option_dict['-build_index']=="1":
             target_seq=option_dict['-ref']
@@ -272,13 +240,16 @@ def main():
         #___ run AdapterRemoval____________________________________
         if option_dict['-skip_filtering']!="1":
 
+            infilter_cont=option_dict["-include"]
+            exfilter_cont=option_dict["-exclude"]
+
             filtered=file_list(infilter_cont,exfilter_cont)
             if option_dict['-paired']=="1":
                 paired=seq_pairing(filtered)
                 n=0
                 for tuple_file in paired:
                     n=n+1
-                    print ("\n\n"+str(n)+"/"+str(len(paired)), tuple_file, "<=== AdapterRemoval is running..")
+                    print ("\n\n"+str(n)+"/"+str(len(paired)), tuple_file, "<=== AdapterRemoval is running..\n\n")
                     run_AdapterRemoval=os.system("AdapterRemoval --threads %s --file1 %s --file2 %s --output1 %s --output2 %s " % (option_dict['-cores'], tuple_file[0], tuple_file[1],tuple_file[0]+"_1_filtered.fq", tuple_file[1]+"_2_filtered.fq"))
                     if run_AdapterRemoval!=0:
                         print ("\n\nRunning AdapterRemoval Raised an error.\nCheck input files and try again.\n\n")
@@ -291,7 +262,7 @@ def main():
                 n=0
                 for file in filtered:
                     n=n+1
-                    print ("\n\n"+str(n)+"/"+str(len(filtered)), file, "<=== AdapterRemoval is running..") 
+                    print ("\n\n"+str(n)+"/"+str(len(filtered)), file, "<=== AdapterRemoval is running..\n\n") 
                     run_AdapterRemoval=os.system("AdapterRemoval --threads %s --file1 %s --output1 %s" % (option_dict['-cores'], file, file+"_filtered.fq"))
                     if run_AdapterRemoval!=0:
                         print ("\n\nRunning AdapterRemoval Raised an error.\nCheck input files and try again.\n\n")
@@ -389,28 +360,17 @@ def main():
 
     filtered=file_list(infilter_cont,exfilter_cont)
 
-    import os
-    # try:
-    #     import pandas as pd
-    # except:
-    #     install_pandas=os.system("pip install pandas")
-    #     if install_pandas==0:
-    #         print ("\n\nPandas is installed..\n\n")
-    #     else:
-    #         print ("\n\nPandas installation is failed..\n\nInstall pandas.\n\n")
-    #         quit()
-
     import csv
     n=0
 
     seq_list=[]
-    transcript_list=[]
     init=0
     cont_dic={} # {transcript:[count,tpm, fpkm]}
     for f in filtered:
         n=n+1
         f_open=open(f,'r')
         sub_cont_dic={}
+        transcript_list=[]
         while 1:
             line=f_open.readline().strip()
             if line=="":
@@ -426,7 +386,8 @@ def main():
                         transcript_list.append(transcript)
                         sub_cont_dic[transcript]=[line[4],line[5],line[6]]
         init=1
-        seq_name=f.split("_")[0]+"_"+f.split("_")[1]+"_"+f.split("_")[2]
+        #seq_name=f.split("_")[0]+"_"+f.split("_")[1]+"_"+f.split("_")[2]
+        seq_name=f.split(".f")[0]#+"_"+f.split("_")[1]+"_"+f.split("_")[2]
         seq_list.append(seq_name)
         cont_dic[seq_name]=sub_cont_dic
     seq_list.sort()
@@ -435,6 +396,7 @@ def main():
     count_dic={}
     tpm_dic={}
     fpkm_dic={}
+
     for t_id in transcript_list:
         count_dic[t_id]=[]
         tpm_dic[t_id]=[]
@@ -443,8 +405,8 @@ def main():
             #print (t_id)
             # print (cont_dic[seq][t_id])
             count_dic[t_id].append(str(int(float(cont_dic[seq][t_id][0]))))
-            tpm_dic[t_id].append(cont_dic[seq][t_id][1])
-            fpkm_dic[t_id].append(cont_dic[seq][t_id][2])
+            tpm_dic[t_id].append(str(int(float(cont_dic[seq][t_id][1]))))
+            fpkm_dic[t_id].append(str(int(float(cont_dic[seq][t_id][2]))))
     count_csv=csv.writer(open(option_dict['-out']+"_Count_all.csv",'w', newline=""))
     TPM_csv=csv.writer(open(option_dict['-out']+"_TPM_all.csv",'w', newline=""))
     FPKM_csv=csv.writer(open(option_dict['-out']+"_FPKM_all.csv",'w', newline=""))
