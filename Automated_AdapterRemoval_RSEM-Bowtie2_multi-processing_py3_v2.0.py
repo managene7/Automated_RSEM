@@ -178,29 +178,30 @@ def build_index(ref_genome, type, gene_info, gene_info_type):
 def fasta_reformat(fasta):
     print ("Converting CDS sequence..\n\n")
     infile=open(fasta,'r')
+    infile_lines=infile.readlines()
     out_file=open(fasta,'w')
     init=0
-    while 1:
-        line=infile.readline().strip()
-        if line=="":
-            seqs="".join(seq_list)
-            out_file.write(">"+name+"\n")
-            out_file.write(seqs+"\n")
-            break
-        elif ">" in line:
-            line=line.split()[0]
+    for line in infile_lines:
+        line=line.strip()
+
+        if ">" in line:
             if init==0:
-                name=line[1:]
+                name=line.split()[0]
                 seq_list=[]
                 init=1
             else:
                 seqs="".join(seq_list)
-                out_file.write(">"+name+"\n")
+                out_file.write(name+"\n")
                 out_file.write(seqs+"\n")
-                name=line[1:]
+                name=line.split()[0]
                 seq_list=[]
         else:
             seq_list.append(line)
+
+    seqs="".join(seq_list)
+    out_file.write(name+"\n")
+    out_file.write(seqs+"\n")
+
 
 def main():
     import os
