@@ -195,6 +195,8 @@ def main():
         print ("\n\nChoose '-skip_filtering' option and try again. (1: skip filtering, 2: run AdapterRemoval)\n\n" )
         quit()
 
+    infilter_cont=option_dict["-include"]
+    exfilter_cont=option_dict["-exclude"]
 
     if option_dict['-parsing_only'] !="1":
 
@@ -239,10 +241,6 @@ def main():
 
         #___ run AdapterRemoval____________________________________
         if option_dict['-skip_filtering']!="1":
-
-            infilter_cont=option_dict["-include"]
-            exfilter_cont=option_dict["-exclude"]
-
             filtered=file_list(infilter_cont,exfilter_cont)
             if option_dict['-paired']=="1":
                 paired=seq_pairing(filtered)
