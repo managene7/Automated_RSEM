@@ -10,9 +10,9 @@ import sys
 
 args = sys.argv[1:]
 
-option_dict={'-cores':"32",'-paired':"1", '-exclude':"",'-ref':"", '-target':"1", '-out':"RSEM_results", '-build_index':"2", '-parsing_only':"2", "-skip_filtering":""}
+option_dict={'-cores':"32",'-paired':"1", '-exclude':"",'-ref':"", '-target':"1", '-out':"RSEM_results", '-build_index':"2", '-parsing_only':"2", "-skip_filtering":"", '-del_fastq':"2"}
 help="""
-________________________________________________________________________________________________
+____________________________________________________________________________________________________
 
 RSEM is a pipeline to calculate counts, TPM, and FPKM from genes or transcripts.
 This pipeline fully automatizes the RSEM from the build index for mapping to parsing RSEM results.
@@ -26,7 +26,7 @@ RSEM (pipeline): sudo apt-get update -y
 Bowtie2 (mapping) : sudo apt-get install -y bowtie2
 
 Samtools: sudo apt-get install -y samtools
-________________________________________________________________________________________________
+____________________________________________________________________________________________________
 
 The pipeline consists of building an index, running RSEM, and parsing the RSEM result
 You can run this pipeline by following methods:
@@ -47,7 +47,7 @@ You can run this pipeline by following methods:
    example: python Automated_RSEM-Bowtie2_multi-processing_py3_v2.0.py -skip_filtering 1 \\
             -parsing_only 1 -target 1
 
-________________________________________________________________________________________________
+____________________________________________________________________________________________________
 
 Usage;
 
@@ -62,7 +62,8 @@ Usage;
 -target         (option)    1: representative genes, 2: isoforms (default is 1)
 -out            (option)    tag for the output file name (default is RSEM_result)                       
 -cores          (option)    number of cores for RSEM (default is 32)
-______________________________________________________________________________________________
+-del_fastq      (option)    1: delete original fastq files after AdapterRemoval 2: no (default is 2)
+____________________________________________________________________________________________________
 """
 if args==[]:
     print (help)
@@ -247,26 +248,39 @@ def main():
                 n=0
                 for tuple_file in paired:
                     n=n+1
-                    print ("\n\n"+str(n)+"/"+str(len(paired)), tuple_file, "<=== AdapterRemoval is running..\n\n")
-                    run_AdapterRemoval=os.system("AdapterRemoval --threads %s --file1 %s --file2 %s --output1 %s --output2 %s " % (option_dict['-cores'], tuple_file[0], tuple_file[1],tuple_file[0]+"_1_filtered.fq", tuple_file[1]+"_2_filtered.fq"))
-                    if run_AdapterRemoval!=0:
-                        print ("\n\nRunning AdapterRemoval Raised an error.\nCheck input files and try again.\n\n")
-                        quit()
-                    else:
-                        print ("\n\nAdaptRemoval has completed!\n\n")
+                    try:
+                        print ("\n\n"+str(n)+"/"+str(len(paired)), tuple_file, "<=== AdapterRemoval is running..\n\n")
+                        run_AdapterRemoval=os.system("AdapterRemoval --threads %s --file1 %s --file2 %s --output1 %s --output2 %s " % (option_dict['-cores'], tuple_file[0], tuple_file[1],tuple_file[0]+"_1_filtered.fq", tuple_file[1]+"_2_filtered.fq"))
+                        if run_AdapterRemoval!=0:
+                            print ("\n\nRunning AdapterRemoval Raised an error.\nCheck input files and try again.\n\n")
+                            quit()
+                        else:
+                            if option_dict['-del_fastq']=="1":
+                                os.system(f"rm {tuple_file[0]}")
+                                os.system(f"rm {tuple_file[1]}")
+                            print ("\n\nAdaptRemoval has completed!\n\n")
+                    except:
+                        print (tuple_file[0], tuple_file[1], "<== These file raised error!!")
+                        pass
 
             elif option_dict['-paired']=="2":
                 #filtered.sort()
                 n=0
                 for file in filtered:
                     n=n+1
-                    print ("\n\n"+str(n)+"/"+str(len(filtered)), file, "<=== AdapterRemoval is running..\n\n") 
-                    run_AdapterRemoval=os.system("AdapterRemoval --threads %s --file1 %s --output1 %s" % (option_dict['-cores'], file, file+"_filtered.fq"))
-                    if run_AdapterRemoval!=0:
-                        print ("\n\nRunning AdapterRemoval Raised an error.\nCheck input files and try again.\n\n")
-                        quit()
-                    else:
-                        print ("\n\nAdaptRemoval has completed!\n\n")
+                    try:
+                        print ("\n\n"+str(n)+"/"+str(len(filtered)), file, "<=== AdapterRemoval is running..\n\n") 
+                        run_AdapterRemoval=os.system("AdapterRemoval --threads %s --file1 %s --output1 %s" % (option_dict['-cores'], file, file+"_filtered.fq"))
+                        if run_AdapterRemoval!=0:
+                            print ("\n\nRunning AdapterRemoval Raised an error.\nCheck input files and try again.\n\n")
+                            quit()
+                        else:
+                            if option_dict['-del_fastq']=="1":
+                                os.system(f"rm {file}")
+                            print ("\n\nAdaptRemoval has completed!\n\n")
+                    except:
+                        print (file, "<== This file raised error!!")
+                        pass
             infilter_cont="_filtered.fq"
         #_________________________________________________________
 
@@ -323,6 +337,9 @@ def main():
                 sub_list=filtered[posi:posi+num_cores]
                 posi+=num_cores
                 len_sublist=len(sub_list)
+                if len_sublist==0:
+                    print ("RSEM running has completed. \n\nParsing of the RSEM results starts.")
+                    break
 
                 #___allocate threads per process when number of seqs are less than threads___
                 thread=int(num_cores/len_sublist)
