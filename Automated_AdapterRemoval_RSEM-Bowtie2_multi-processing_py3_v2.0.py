@@ -393,7 +393,7 @@ def main():
             else:
                 line=line.split()
                 if line[0]!="transcript_id":
-                    transcript=line[0].split("_")[0]
+                    transcript=line[1]#.split("_")[0]
                     # if transcript not in ['gene', 'transcript']:
                         
                     
