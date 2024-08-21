@@ -392,8 +392,8 @@ def main():
                 break
             else:
                 line=line.split()
-                if line[-1]!="FPKM":
-                    transcript=line[1]#.split("_")[0]
+                if line[2]!="length":
+                    transcript=line[0]#.split("_")[0]
                     # if transcript not in ['gene', 'transcript']:
                         
                     
