@@ -18,7 +18,7 @@ RSEM is a pipeline to calculate counts, TPM, and FPKM from genes or transcripts.
 This pipeline fully automatizes the RSEM from the build index for mapping to parsing RSEM results.
 This pipeline needs the following prerequisite software installed:
 
-AdapterRemoval: conda install bioconda::adapterremoval
+AdapterRemoval: sudo apt-get install -y adapterremoval
 
 RSEM (pipeline): sudo apt-get update -y
                  sudo apt-get install -y rsem
@@ -31,20 +31,20 @@ ________________________________________________________________________________
 The pipeline consists of building an index, running RSEM, and parsing the RSEM result
 You can run this pipeline by following methods:
 1) run all steps: use all options
-   example: python Automated_RSEM-Bowtie2_multi-processing_py3_v2.0.py -skip_filtering 2 \\
+   example: python Automated_AdapterRemoval_RSEM-Bowtie2_multi-processing_py3_v2.0.py -skip_filtering 2 \\
             -build_index 1 -include .fq -exclude .fa -paired 1 -parsing_only 2 -target 1
 
 2) skip AdapterRemoval and run all the rest of the steps: use all options
-   example: python Automated_RSEM-Bowtie2_multi-processing_py3_v2.0.py -skip_filtering 1 \\
+   example: python Automated_AdapterRemoval_RSEM-Bowtie2_multi-processing_py3_v2.0.py -skip_filtering 1 \\
             -build_index 1 -include filtered.fq -exclude .fa -paired 1 -parsing_only 2 -target 1
             
 3) run RSEM and parse RSEM results: set '-build_index' option as '2' and use all options
-   example: python Automated_RSEM-Bowtie2_multi-processing_py3_v2.0.py -skip_filtering 1 \\
+   example: python Automated_AdapterRemoval_RSEM-Bowtie2_multi-processing_py3_v2.0.py -skip_filtering 1 \\
             -build_index 2 -ref genome.fa -include .fq -exclude .fa -paired 1 -parsing_only 2 \\
             -target 1
 
 4) only parse RSEM results: set '-parsing_only' option as '1' and use '-target' option.
-   example: python Automated_RSEM-Bowtie2_multi-processing_py3_v2.0.py -skip_filtering 1 \\
+   example: python Automated_AdapterRemoval_RSEM-Bowtie2_multi-processing_py3_v2.0.py -skip_filtering 1 \\
             -parsing_only 1 -target 1
 
 ____________________________________________________________________________________________________
