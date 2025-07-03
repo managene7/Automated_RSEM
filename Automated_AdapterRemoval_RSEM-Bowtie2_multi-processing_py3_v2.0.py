@@ -18,7 +18,7 @@ RSEM is a pipeline to calculate counts, TPM, and FPKM from genes or transcripts.
 This pipeline fully automatizes the RSEM from the build index for mapping to parsing RSEM results.
 This pipeline needs the following prerequisite software installed:
 
-AdapterRemoval: conda install bioconda::adapterremoval
+AdapterRemoval: sudo apt-get install adapterremoval
 
 RSEM (pipeline): sudo apt-get update -y
                  sudo apt-get install -y rsem
